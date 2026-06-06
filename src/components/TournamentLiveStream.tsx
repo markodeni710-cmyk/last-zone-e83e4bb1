@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Radio, MonitorUp, StopCircle, Eye, Loader2, Smartphone } from "lucide-react";
+import { X, Radio, MonitorUp, StopCircle, Eye, Loader2, Smartphone, Maximize2, Minimize2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTournamentStreamToken } from "@/lib/tournament-stream.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,9 @@ export function TournamentLiveStream({ tournament, mode, onClose }: Props) {
   const getToken = useServerFn(getTournamentStreamToken);
   const [status, setStatus] = useState<"idle" | "connecting" | "live" | "ended">("idle");
   const [viewers, setViewers] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const playerWrapRef = useRef<HTMLDivElement>(null);
 
   const clientRef = useRef<any>(null);
   const screenTrackRef = useRef<any>(null);

@@ -350,8 +350,32 @@ export function TournamentLiveStream({ tournament, mode, onClose }: Props) {
         </button>
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center">
-        <div ref={containerRef} className="w-full h-full" />
+      <div ref={playerWrapRef} className="flex-1 relative flex items-center justify-center bg-black">
+        <div ref={containerRef} className="w-full h-full [&>video]:!object-contain [&_video]:!object-contain [&_video]:!w-full [&_video]:!h-full" />
+        {status === "live" && mode === "viewer" && (
+          <button
+            onClick={async () => {
+              const el = playerWrapRef.current;
+              if (!el) return;
+              try {
+                if (!document.fullscreenElement) {
+                  await el.requestFullscreen?.();
+                  // حاول قفل الاتجاه أفقياً للمشاهدة المريحة
+                  try { await (screen.orientation as any)?.lock?.("landscape"); } catch { /* ignore */ }
+                  setIsFullscreen(true);
+                } else {
+                  await document.exitFullscreen?.();
+                  try { (screen.orientation as any)?.unlock?.(); } catch { /* ignore */ }
+                  setIsFullscreen(false);
+                }
+              } catch { /* ignore */ }
+            }}
+            className="absolute bottom-4 right-4 z-10 size-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur flex items-center justify-center text-white border border-white/20"
+            aria-label={isFullscreen ? "إنهاء التكبير" : "ملء الشاشة"}
+          >
+            {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
+          </button>
+        )}
         {status === "connecting" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
             <Loader2 className="size-10 animate-spin" />

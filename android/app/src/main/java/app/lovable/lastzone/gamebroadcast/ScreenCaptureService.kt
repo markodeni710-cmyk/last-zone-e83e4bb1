@@ -16,10 +16,16 @@ class ScreenCaptureService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        try {
+            startForegroundWithNotification()
+        } catch (t: Throwable) {
+            android.util.Log.e("ScreenCaptureService", "startForeground failed", t)
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
-        // بدء الخدمة كـ Foreground قبل أي شيء آخر ليتوافق مع متطلبات Android 14
-        startForegroundWithNotification()
-
+        val resultData: Intent? = intent?.getParcelableExtra("resultData")
+        val resultCode = intent?.getIntExtra("resultCode", Activity.RESULT_CANCELED) ?: Activity.RESULT_CANCELED
         val appId = intent?.getStringExtra("appId").orEmpty()
         val channel = intent?.getStringExtra("channel").orEmpty()
         val token = intent?.getStringExtra("token").orEmpty()
@@ -27,25 +33,26 @@ class ScreenCaptureService : Service() {
 
         android.util.Log.i(
             "ScreenCaptureService",
-            "start params: appId=${appId.take(6)}... channel=$channel uid=$uid hasToken=${token.isNotEmpty()}"
+            "start params: appId=${appId.take(6)}... channel=$channel uid=$uid hasToken=${token.isNotEmpty()} resultCode=$resultCode hasData=${resultData != null}"
         )
 
-        if (appId.isEmpty() || channel.isEmpty()) {
-            android.util.Log.e("ScreenCaptureService", "missing required params (appId/channel), stopping")
+        if (resultData == null || resultCode != Activity.RESULT_OK || appId.isEmpty() || channel.isEmpty()) {
+            android.util.Log.e("ScreenCaptureService", "missing required params, stopping")
             stopSelf()
             return START_NOT_STICKY
         }
 
-        // تشغيل Agora على الـ Main Thread لأن بدء التقاط الشاشة قد يطلب إذن المستخدم (UI)
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
+        val appCtx = applicationContext
+
+        Thread {
             try {
-                pusher = AgoraScreenPusher(this).apply {
-                    start(appId, channel, token, uid)
+                pusher = AgoraScreenPusher(appCtx).apply {
+                    start(appId, channel, token, uid, resultData)
                 }
             } catch (t: Throwable) {
                 android.util.Log.e("ScreenCaptureService", "pusher start failed", t)
             }
-        }
+        }.start()
 
         return START_STICKY
     }
@@ -64,8 +71,15 @@ class ScreenCaptureService : Service() {
             .setSmallIcon(android.R.drawable.presence_video_online)
             .setOngoing(true)
             .build()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1001, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
+            startForeground(1001, notif, type)
         } else {
             startForeground(1001, notif)
         }

@@ -3,6 +3,7 @@ package app.lovable.lastzone.gamebroadcast
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.os.Build
 import android.os.IBinder
@@ -28,7 +29,6 @@ class ScreenCaptureService : Service() {
         val appId = intent?.getStringExtra("appId").orEmpty()
         val channel = intent?.getStringExtra("channel").orEmpty()
         val token = intent?.getStringExtra("token").orEmpty()
-        // uid=0 مسموح (Agora يولّد UID تلقائياً) - مهم لمطابقة الـ Token من الويب
         val uid = intent?.getIntExtra("uid", 0) ?: 0
 
         android.util.Log.i(
@@ -37,15 +37,16 @@ class ScreenCaptureService : Service() {
         )
 
         if (resultData == null || resultCode != Activity.RESULT_OK || appId.isEmpty() || channel.isEmpty()) {
-            android.util.Log.e("ScreenCaptureService", "missing required params (appId/channel/resultData), stopping")
+            android.util.Log.e("ScreenCaptureService", "missing required params, stopping")
             stopSelf()
             return START_NOT_STICKY
         }
 
-        // نشغّل بدء Agora على Thread منفصل حتى لا نوقف الـ main thread
+        val appCtx = applicationContext
+
         Thread {
             try {
-                pusher = AgoraScreenPusher(this).apply {
+                pusher = AgoraScreenPusher(appCtx).apply {
                     start(appId, channel, token, uid, resultData)
                 }
             } catch (t: Throwable) {
@@ -72,11 +73,13 @@ class ScreenCaptureService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                1001,
-                notif,
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            )
+            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
+            startForeground(1001, notif, type)
         } else {
             startForeground(1001, notif)
         }

@@ -17,7 +17,8 @@ class AgoraScreenPusher(private val androidContext: Context) {
         appId: String,
         channel: String,
         token: String,
-        uid: Int
+        uid: Int,
+        resultData: Intent
     ) {
         try {
             if (rtcEngine != null) {
@@ -25,31 +26,24 @@ class AgoraScreenPusher(private val androidContext: Context) {
                 return
             }
 
+            val ctx = androidContext.applicationContext
+                ?: throw IllegalStateException("applicationContext is null")
+
             val cfg = RtcEngineConfig().apply {
-                mContext = androidContext.applicationContext
+                mContext = ctx
                 mAppId = appId
                 mEventHandler = object : IRtcEngineEventHandler() {
                     override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
-                        android.util.Log.i("AgoraScreenPusher", "✅ join ok channel=$channel uid=$uid elapsed=$elapsed")
+                        android.util.Log.i("AgoraScreenPusher", "✅ join ok ch=$channel uid=$uid")
                     }
                     override fun onError(err: Int) {
-                        android.util.Log.e("AgoraScreenPusher", "❌ agora error code=$err msg=${RtcEngine.getErrorDescription(err)}")
-                    }
-                    override fun onLocalVideoStateChanged(
-                        source: Constants.VideoSourceType?,
-                        state: Int,
-                        error: Int
-                    ) {
-                        android.util.Log.i(
-                            "AgoraScreenPusher",
-                            "localVideoState src=$source state=$state err=$error"
-                        )
+                        android.util.Log.e("AgoraScreenPusher", "❌ agora err=$err ${RtcEngine.getErrorDescription(err)}")
                     }
                     override fun onUserJoined(uid: Int, elapsed: Int) {
                         android.util.Log.i("AgoraScreenPusher", "👤 viewer joined uid=$uid")
                     }
                     override fun onFirstLocalVideoFramePublished(source: Constants.VideoSourceType?, elapsed: Int) {
-                        android.util.Log.i("AgoraScreenPusher", "🎥 first video frame PUBLISHED src=$source elapsed=$elapsed")
+                        android.util.Log.i("AgoraScreenPusher", "🎥 first frame published src=$source")
                     }
                 }
             }
@@ -59,51 +53,54 @@ class AgoraScreenPusher(private val androidContext: Context) {
             engine.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING)
             engine.setClientRole(Constants.CLIENT_ROLE_BROADCASTER)
             engine.enableVideo()
+            engine.enableAudio()
 
-            val metrics = androidContext.resources.displayMetrics
-            val targetWidth = 720
-            val targetHeight = if (metrics.widthPixels > 0) {
-                (targetWidth.toFloat() * metrics.heightPixels / metrics.widthPixels).toInt()
+            // أبعاد ديناميكية تعتمد على دوران الشاشة (ADAPTIVE يتولى التدوير)
+            val metrics = ctx.resources.displayMetrics
+            val shortSide = 720
+            val longSide = if (metrics.widthPixels > 0 && metrics.heightPixels > 0) {
+                val ratio = maxOf(metrics.widthPixels, metrics.heightPixels).toFloat() /
+                    minOf(metrics.widthPixels, metrics.heightPixels).toFloat()
+                (shortSide * ratio).toInt()
             } else 1280
 
             engine.setVideoEncoderConfiguration(
                 VideoEncoderConfiguration(
-                    VideoEncoderConfiguration.VideoDimensions(targetWidth, targetHeight),
-                    VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15,
+                    VideoEncoderConfiguration.VideoDimensions(longSide, shortSide),
+                    VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_24,
                     VideoEncoderConfiguration.STANDARD_BITRATE,
                     VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_ADAPTIVE
                 )
             )
 
+            // فعّل صوت النظام (Android 10+) في التقاط الشاشة
             val params = ScreenCaptureParameters().apply {
                 captureVideo = true
-                captureAudio = false
-                videoCaptureParameters.width = targetWidth
-                videoCaptureParameters.height = targetHeight
-                videoCaptureParameters.framerate = 15
+                captureAudio = true
+                videoCaptureParameters.width = longSide
+                videoCaptureParameters.height = shortSide
+                videoCaptureParameters.framerate = 24
+                audioCaptureParameters.captureSignalVolume = 100
             }
 
-            // 1) ابدأ التقاط الشاشة أولاً (يوصى به من Agora قبل الانضمام للقناة)
-            val ret = engine.startScreenCapture(params)
-            android.util.Log.i("AgoraScreenPusher", "startScreenCapture ret=$ret")
-
-            // 2) إعداد خيارات النشر
             val options = ChannelMediaOptions().apply {
                 publishCameraTrack = false
                 publishMicrophoneTrack = false
                 publishScreenCaptureVideo = true
-                publishScreenCaptureAudio = false
+                publishScreenCaptureAudio = true
                 autoSubscribeAudio = false
                 autoSubscribeVideo = false
                 clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
                 channelProfile = Constants.CHANNEL_PROFILE_LIVE_BROADCASTING
             }
-
-            // 3) انضم للقناة كـ broadcaster مع تفعيل نشر شاشة
             val joinRet = engine.joinChannel(token, channel, uid, options)
-            android.util.Log.i("AgoraScreenPusher", "joinChannel ret=$joinRet uid=$uid channel=$channel hasToken=${token.isNotEmpty()}")
+            android.util.Log.i("AgoraScreenPusher", "joinChannel ret=$joinRet uid=$uid")
 
-            // 3) أعد تفعيل خيارات النشر للتأكد من بدء البث
+            Thread.sleep(300)
+
+            val ret = engine.startScreenCapture(resultData, params)
+            android.util.Log.i("AgoraScreenPusher", "startScreenCapture ret=$ret")
+
             engine.updateChannelMediaOptions(options)
         } catch (t: Throwable) {
             android.util.Log.e("AgoraScreenPusher", "start failed", t)

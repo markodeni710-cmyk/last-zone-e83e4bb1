@@ -2,7 +2,6 @@ package app.lovable.lastzone.gamebroadcast
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
@@ -38,7 +37,6 @@ class GameBroadcastPlugin : Plugin() {
             put("tournamentName", call.getString("tournamentName", "بطولة") ?: "بطولة")
         }
 
-        // تحقق من صلاحية النافذة العائمة أولاً
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
             call.reject("OVERLAY_PERMISSION_REQUIRED")
             return
@@ -47,6 +45,7 @@ class GameBroadcastPlugin : Plugin() {
         pendingCall = call
         pendingOptions = opts
 
+        // اطلب صلاحية MediaProjection (تظهر نافذة النظام للمستخدم)
         val mpm = context.getSystemService(Activity.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val intent = mpm.createScreenCaptureIntent()
         startActivityForResult(call, intent, "onScreenCaptureResult")
@@ -66,7 +65,6 @@ class GameBroadcastPlugin : Plugin() {
             return
         }
 
-        // ابدأ Foreground Service
         val svc = Intent(context, ScreenCaptureService::class.java).apply {
             putExtra("resultCode", result.resultCode)
             putExtra("resultData", data)
@@ -88,7 +86,6 @@ class GameBroadcastPlugin : Plugin() {
             return
         }
 
-        // ابدأ النافذة العائمة
         try {
             val bubble = Intent(context, FloatingBubbleService::class.java).apply {
                 putExtra("tournamentName", opts.getString("tournamentName"))
@@ -156,7 +153,6 @@ class GameBroadcastPlugin : Plugin() {
         notifyListeners("broadcastEvent", data)
     }
 
-    /** يُستدعى من الفقاعة العائمة لما المستخدم يضغط زر الإيقاف */
     fun notifyStoppedFromBubble() {
         notifyBroadcastEvent("stopped", "stopped_from_bubble")
     }

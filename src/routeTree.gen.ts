@@ -9,8 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TournamentsRouteImport } from './routes/tournaments'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FriendsRouteImport } from './routes/friends'
+import { Route as FeedRouteImport } from './routes/feed'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClipClipIdRouteImport } from './routes/clip.$clipId'
@@ -28,6 +31,11 @@ import { Route as AuthenticatedAppServersServerIdRouteImport } from './routes/_a
 import { Route as AuthenticatedAppDmUserIdRouteImport } from './routes/_authenticated/app/dm.$userId'
 import { Route as AuthenticatedAppClipClipIdRouteImport } from './routes/_authenticated/app/clip.$clipId'
 
+const TournamentsRoute = TournamentsRouteImport.update({
+  id: '/tournaments',
+  path: '/tournaments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -36,6 +44,16 @@ const ProfileRoute = ProfileRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendsRoute = FriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -124,8 +142,11 @@ const AuthenticatedAppClipClipIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/feed': typeof FeedRoute
+  '/friends': typeof FriendsRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/tournaments': typeof TournamentsRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/clip/$clipId': typeof ClipClipIdRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
@@ -143,8 +164,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/feed': typeof FeedRoute
+  '/friends': typeof FriendsRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/tournaments': typeof TournamentsRoute
   '/clip/$clipId': typeof ClipClipIdRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/feed': typeof AuthenticatedAppFeedRoute
@@ -163,8 +187,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/feed': typeof FeedRoute
+  '/friends': typeof FriendsRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
+  '/tournaments': typeof TournamentsRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/clip/$clipId': typeof ClipClipIdRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
@@ -184,8 +211,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/feed'
+    | '/friends'
     | '/login'
     | '/profile'
+    | '/tournaments'
     | '/app'
     | '/clip/$clipId'
     | '/app/admin'
@@ -203,8 +233,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/feed'
+    | '/friends'
     | '/login'
     | '/profile'
+    | '/tournaments'
     | '/clip/$clipId'
     | '/app/admin'
     | '/app/feed'
@@ -222,8 +255,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/feed'
+    | '/friends'
     | '/login'
     | '/profile'
+    | '/tournaments'
     | '/_authenticated/app'
     | '/clip/$clipId'
     | '/_authenticated/app/admin'
@@ -243,13 +279,23 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  FeedRoute: typeof FeedRoute
+  FriendsRoute: typeof FriendsRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
+  TournamentsRoute: typeof TournamentsRoute
   ClipClipIdRoute: typeof ClipClipIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tournaments': {
+      id: '/tournaments'
+      path: '/tournaments'
+      fullPath: '/tournaments'
+      preLoaderRoute: typeof TournamentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -262,6 +308,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friends': {
+      id: '/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof FriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -427,10 +487,23 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  FeedRoute: FeedRoute,
+  FriendsRoute: FriendsRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
+  TournamentsRoute: TournamentsRoute,
   ClipClipIdRoute: ClipClipIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

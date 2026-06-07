@@ -17,8 +17,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as FeedRouteImport } from './routes/feed'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServersServerIdRouteImport } from './routes/servers.$serverId'
+import { Route as DmUserIdRouteImport } from './routes/dm.$userId'
 import { Route as ClipClipIdRouteImport } from './routes/clip.$clipId'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
@@ -74,6 +77,11 @@ const FeedRoute = FeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -81,6 +89,16 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServersServerIdRoute = ServersServerIdRouteImport.update({
+  id: '/servers/$serverId',
+  path: '/servers/$serverId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DmUserIdRoute = DmUserIdRouteImport.update({
+  id: '/dm/$userId',
+  path: '/dm/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClipClipIdRoute = ClipClipIdRouteImport.update({
@@ -160,6 +178,7 @@ const AuthenticatedAppClipClipIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/feed': typeof FeedRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
@@ -170,6 +189,8 @@ export interface FileRoutesByFullPath {
   '/tournaments': typeof TournamentsRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/clip/$clipId': typeof ClipClipIdRoute
+  '/dm/$userId': typeof DmUserIdRoute
+  '/servers/$serverId': typeof ServersServerIdRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/feed': typeof AuthenticatedAppFeedRoute
   '/app/friends': typeof AuthenticatedAppFriendsRoute
@@ -185,6 +206,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/feed': typeof FeedRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
@@ -194,6 +216,8 @@ export interface FileRoutesByTo {
   '/squads': typeof SquadsRoute
   '/tournaments': typeof TournamentsRoute
   '/clip/$clipId': typeof ClipClipIdRoute
+  '/dm/$userId': typeof DmUserIdRoute
+  '/servers/$serverId': typeof ServersServerIdRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/feed': typeof AuthenticatedAppFeedRoute
   '/app/friends': typeof AuthenticatedAppFriendsRoute
@@ -211,6 +235,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/admin': typeof AdminRoute
   '/feed': typeof FeedRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
@@ -221,6 +246,8 @@ export interface FileRoutesById {
   '/tournaments': typeof TournamentsRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/clip/$clipId': typeof ClipClipIdRoute
+  '/dm/$userId': typeof DmUserIdRoute
+  '/servers/$serverId': typeof ServersServerIdRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/feed': typeof AuthenticatedAppFeedRoute
   '/_authenticated/app/friends': typeof AuthenticatedAppFriendsRoute
@@ -238,6 +265,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/feed'
     | '/friends'
     | '/history'
@@ -248,6 +276,8 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/app'
     | '/clip/$clipId'
+    | '/dm/$userId'
+    | '/servers/$serverId'
     | '/app/admin'
     | '/app/feed'
     | '/app/friends'
@@ -263,6 +293,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/feed'
     | '/friends'
     | '/history'
@@ -272,6 +303,8 @@ export interface FileRouteTypes {
     | '/squads'
     | '/tournaments'
     | '/clip/$clipId'
+    | '/dm/$userId'
+    | '/servers/$serverId'
     | '/app/admin'
     | '/app/feed'
     | '/app/friends'
@@ -288,6 +321,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/admin'
     | '/feed'
     | '/friends'
     | '/history'
@@ -298,6 +332,8 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/_authenticated/app'
     | '/clip/$clipId'
+    | '/dm/$userId'
+    | '/servers/$serverId'
     | '/_authenticated/app/admin'
     | '/_authenticated/app/feed'
     | '/_authenticated/app/friends'
@@ -315,6 +351,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AdminRoute: typeof AdminRoute
   FeedRoute: typeof FeedRoute
   FriendsRoute: typeof FriendsRoute
   HistoryRoute: typeof HistoryRoute
@@ -324,6 +361,8 @@ export interface RootRouteChildren {
   SquadsRoute: typeof SquadsRoute
   TournamentsRoute: typeof TournamentsRoute
   ClipClipIdRoute: typeof ClipClipIdRoute
+  DmUserIdRoute: typeof DmUserIdRoute
+  ServersServerIdRoute: typeof ServersServerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -384,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -396,6 +442,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/servers/$serverId': {
+      id: '/servers/$serverId'
+      path: '/servers/$serverId'
+      fullPath: '/servers/$serverId'
+      preLoaderRoute: typeof ServersServerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dm/$userId': {
+      id: '/dm/$userId'
+      path: '/dm/$userId'
+      fullPath: '/dm/$userId'
+      preLoaderRoute: typeof DmUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clip/$clipId': {
@@ -547,6 +607,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AdminRoute: AdminRoute,
   FeedRoute: FeedRoute,
   FriendsRoute: FriendsRoute,
   HistoryRoute: HistoryRoute,
@@ -556,6 +617,8 @@ const rootRouteChildren: RootRouteChildren = {
   SquadsRoute: SquadsRoute,
   TournamentsRoute: TournamentsRoute,
   ClipClipIdRoute: ClipClipIdRoute,
+  DmUserIdRoute: DmUserIdRoute,
+  ServersServerIdRoute: ServersServerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

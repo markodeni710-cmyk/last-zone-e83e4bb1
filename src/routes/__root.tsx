@@ -98,6 +98,31 @@ function AuthSync() {
   const router = useRouter();
   const queryClient = useQueryClient();
   useEffect(() => {
+    const completeOAuthRedirect = async () => {
+      if (typeof window === "undefined") return;
+
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const authError = params.get("error_description") || params.get("error");
+
+      if (authError) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        return;
+      }
+
+      if (accessToken && refreshToken) {
+        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        await router.navigate({ to: "/app", replace: true });
+      }
+    };
+
+    completeOAuthRedirect().catch((error) => console.error("OAuth redirect failed", error));
+
     // Record session on initial mount if already authenticated
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) trackSession();

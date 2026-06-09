@@ -10,7 +10,7 @@ const backendUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 
 const backendPublishableKey =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InpxamxlbGdpdGpodW5wb2FwbWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5ODYyOTgsImV4cCI6MjA5NTU2MjI5OH0.zRY8jJcy6DmIqKt1XbKGAZTXJ9f55570NnhFJ9Wj6wU";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxamxlbGdpdGpodW5wb2FwbWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5ODYyOTgsImV4cCI6MjA5NTU2MjI5OH0.zRY8jJcy6DmIqKt1XbKGAZTXJ9f55570NnhFJ9Wj6wU";
 
 export default defineConfig({
   tanstackStart: {

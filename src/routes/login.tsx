@@ -121,7 +121,7 @@ function LoginPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -130,15 +130,31 @@ function LoginPage() {
           },
         });
         if (error) throw error;
-        toast.success("تم إنشاء الحساب! جاري تسجيل الدخول...");
+        if (data.session) {
+          toast.success("تم إنشاء الحساب!");
+          navigate({ to: "/app", replace: true });
+          return;
+        }
+        toast.success("تم إنشاء الحساب، تحقق من بريدك لتفعيل الدخول");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("أهلاً بعودتك!");
+        if (data.session) {
+          navigate({ to: "/app", replace: true });
+          return;
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "حصل خطأ";
-      toast.error(msg.includes("Invalid") ? "بيانات غير صحيحة" : msg);
+      const friendly = msg.includes("Invalid")
+        ? "بيانات الدخول غير صحيحة"
+        : msg.toLowerCase().includes("weak password") || msg.toLowerCase().includes("pwned")
+          ? "كلمة المرور ضعيفة أو مستخدمة سابقًا. اختر كلمة أقوى مثل أحرف كبيرة وصغيرة وأرقام ورموز."
+          : msg.includes("already registered") || msg.includes("already been registered")
+            ? "هذا البريد مسجل مسبقًا، جرّب تسجيل الدخول بدل إنشاء حساب."
+            : msg;
+      toast.error(friendly);
     } finally {
       setLoading(false);
     }
@@ -168,6 +184,10 @@ function LoginPage() {
         if (result.error) {
           toast.error("فشل تسجيل الدخول بجوجل");
           setLoading(false);
+          return;
+        }
+        if (!result.redirected) {
+          navigate({ to: "/app", replace: true });
         }
       }
     } catch (err) {
